@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   nginx:
-    image: owasp/modsecurity:latest
+    image: jcmoraisjr/modsecurity:latest
     ports:
       - "80:80"
       - "443:443"
@@ -41,7 +41,7 @@ services:
       - db_data:/var/lib/mysql
 
   waf:
-    image: wp_waf:latest
+    image: your_waf_image:latest
     environment:
       APP_ENV: production
       DB_HOST: db
@@ -53,7 +53,7 @@ services:
       - "traefik.http.services.waf.loadbalancer.server.port=80"
 
   waf2:
-    image: wp_waf2:latest
+    image: your_waf2_image:latest
     environment:
       APP_ENV: production
       DB_HOST: db
