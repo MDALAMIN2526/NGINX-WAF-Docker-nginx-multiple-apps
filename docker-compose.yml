@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: owasp/modsecurity:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/modsecurity:/etc/nginx/modsecurity:ro
+    depends_on:
+      - wordpress
+      - db
+      - waf
+      - waf2
+
+  wordpress:
+    image: wordpress:latest
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+    volumes:
+      - wordpress_data:/var/www/html
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wordpress.rule=Host(`waf.codepromax.com.de`)"
+      - "traefik.http.services.wordpress.loadbalancer.server.port=80"
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+
+  waf:
+    image: wp_waf:latest
+    environment:
+      APP_ENV: production
+      DB_HOST: db
+    volumes:
+      - waf_data:/var/www/waf
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.waf.rule=Host(`waf.codepromax.com.de`)"
+      - "traefik.http.services.waf.loadbalancer.server.port=80"
+
+  waf2:
+    image: wp_waf2:latest
+    environment:
+      APP_ENV: production
+      DB_HOST: db
+    volumes:
+      - waf2_data:/var/www/waf2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.waf2.rule=Host(`waf2.codepromax.com.de`)"
+      - "traefik.http.services.waf2.loadbalancer.server.port=80"
+
+volumes:
+  wordpress_data:
+  db_data:
+  waf_data:
+  waf2_data:
